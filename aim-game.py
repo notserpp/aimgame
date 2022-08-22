@@ -16,9 +16,12 @@ window = pygame.display.set_mode((600, 600))
 running = [True]
 
 difficulty = ["easy", "medium", "hard", "expert"]
+allow_hit = [True]
+is_hit = [False]
+game_speed = [2000]
 
 move_ball_event = pygame.USEREVENT + 0
-update_ball_color_event = pygame.USEREVENT + 1
+pygame.time.set_timer(move_ball_event, game_speed[0])
 
 
 ball_color_red = (255, 50, 50)
@@ -30,10 +33,8 @@ health = [100]
 
 
 def move_ball():
-    position_x = random.randint(40, 560)
-    position_y = random.randint(40, 560)
-    ball_position[0] = position_x
-    ball_position[1] = position_y
+    position_x, position_y = random.randint(40, 560), random.randint(40, 560)
+    ball_position[0], ball_position[1] = position_x, position_y
 
 
 def get_ball_position():
@@ -71,7 +72,7 @@ def verify_circle_hit():
 
     # if its true, add point
     else:
-        reduce_health()
+        reduce_health(10)
         if (health[0] <= 0):
             print("You lose!")
             running[0] = False
@@ -81,10 +82,7 @@ def verify_circle_hit():
 
 def radius_check(ball_position, mouse_click_position, ball_radius):
     if abs(mouse_click_position[0] - ball_position[0]) <= ball_radius:
-        print(abs(mouse_click_position[0] - ball_position[0]))
         if abs(mouse_click_position[1] - ball_position[1]) <= ball_radius:
-            print(abs(mouse_click_position[1] -
-                  ball_position[1]) <= ball_radius)
             return True
     else:
         return False
@@ -95,28 +93,19 @@ def add_points():
     print("Points scored: ", points)
 
 
-def reduce_health():
-    health[0] -= 10
+def reduce_health(points):
+    health[0] -= points
     print("Health: ", health)
 
 
 def update_ball_color():
-    print("here")
     window.fill((255, 255, 255))
     pygame.display.update()
-
-
-def render():
-    window.fill((255, 255, 255))
-    pygame.draw.circle(window, ball_color_red, ball_position, ball_size[0], 0)
-    pygame.display.update()
-
-
-allow_hit = [True]
 
 
 def target_hit_animation():
     allow_hit[0] = False
+    is_hit[0] = True
     pygame.draw.circle(window, ball_color_black,
                        ball_position, ball_size[0], 0)
     pygame.display.update()
@@ -125,10 +114,33 @@ def target_hit_animation():
     pygame.display.update()
 
 
+def did_hit():
+    if is_hit[0] == False:
+        reduce_health(1)
+
+
+def render():
+    window.fill((255, 255, 255))
+    pygame.draw.circle(window, ball_color_red, ball_position, ball_size[0], 0)
+    pygame.display.update()
+
+
+def update_game_speed():
+    game_speed[0] -= 100
+    print((game_speed[0]))
+    pygame.time.set_timer(move_ball_event, game_speed[0])
+
+
+def allow_new_hit():
+    allow_hit[0] = True
+
+
+def is_not_hit():
+    is_hit[0] = False
+
+
 render()
 
-
-pygame.time.set_timer(move_ball_event, 700)
 
 while running[0]:
 
@@ -137,11 +149,14 @@ while running[0]:
             if (allow_hit[0]):
                 if verify_circle_hit():
                     target_hit_animation()
+                    update_game_speed()
         elif event.type == move_ball_event:
-            allow_hit[0] = True
             move_ball()
             change_ball_size()
+            did_hit()
             render()
+            allow_new_hit()
+            is_not_hit()
 
         # Check for QUIT event
         if event.type == pygame.QUIT:
